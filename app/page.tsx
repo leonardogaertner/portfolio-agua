@@ -2,16 +2,18 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
+import Image from "next/image"; // Importante para performance no Next.js
 
 export default function Home() {
+  // --- ESTADOS DO CARRINHO ---
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const unitPrice = 150;
 
+  // --- LÓGICA DE VÍDEO CONTROLADO PELO SCROLL (LERP) ---
   const videoRef = useRef<HTMLVideoElement>(null);
   const { scrollYProgress } = useScroll();
 
-  // Lógica de Scroll Suavizado (Lerp)
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -19,11 +21,14 @@ export default function Home() {
     video.pause();
     let targetTime = 0;
     let currentTime = 0;
-    const friction = 0.08; // Valor ideal para sensação de luxo e fluidez
+    const friction = 0.12; 
 
     const render = () => {
       if (video.duration) {
         currentTime += (targetTime - currentTime) * friction;
+        if (Math.abs(currentTime - targetTime) < 0.001) {
+          currentTime = targetTime;
+        }
         video.currentTime = currentTime;
       }
       requestAnimationFrame(render);
@@ -36,25 +41,16 @@ export default function Home() {
     });
 
     const raf = requestAnimationFrame(render);
-
     return () => {
       unsubscribe();
       cancelAnimationFrame(raf);
     };
   }, [scrollYProgress]);
 
-  const containerRef = useRef(null);
-  const { scrollYProgress: sectionScroll } = useScroll({
-    target: containerRef,
-    offset: ["start end", "end start"],
-  });
-  
-  const y = useTransform(sectionScroll, [0, 1], ["-15%", "15%"]);
-
   return (
     <main className="min-h-screen bg-background flex flex-col relative overflow-x-hidden selection:bg-accent selection:text-white">
       
-      {/* --- CART --- */}
+      {/* --- OFF-CANVAS CART --- */}
       <AnimatePresence>
         {isCartOpen && (
           <>
@@ -72,23 +68,29 @@ export default function Home() {
                 <h3 className="font-display text-2xl italic text-primary">Your Selection</h3>
                 <button onClick={() => setIsCartOpen(false)} className="text-muted hover:text-accent transition-colors text-xs uppercase tracking-widest">Close</button>
               </div>
-              {/* Cart Content... */}
+
+              {/* ITEM DO CARRINHO COM AGUA2.PNG */}
               <div className="flex gap-6 pb-8 border-b border-white/5">
-                <div className="w-24 h-32 bg-background border border-white/5 flex items-center justify-center shrink-0">
-                  <span className="text-[10px] text-muted uppercase tracking-tighter italic font-display">Água.</span>
+                <div className="w-24 h-32 bg-background border border-white/5 relative overflow-hidden shrink-0">
+                  <Image 
+                    src="/agua4.png" 
+                    alt="Água. Elixir No. 1" 
+                    fill 
+                    className="object-contain p-2"
+                  />
                 </div>
                 <div className="flex flex-col justify-between py-2 w-full">
                   <div>
                     <h4 className="font-display text-lg text-primary mb-1 italic">Água. Elixir No. 1</h4>
-                    <p className="text-muted text-[10px] uppercase tracking-widest font-body">750ml • Limited</p>
+                    <p className="text-muted text-[10px] uppercase tracking-widest font-body">750ml • Limited Edition</p>
                   </div>
-                  <div className="flex justify-between items-center mt-4">
-                    <div className="flex items-center border border-white/10 px-3 py-1 gap-4 font-body">
+                  <div className="flex justify-between items-center mt-4 font-body">
+                    <div className="flex items-center border border-white/10 px-3 py-1 gap-4">
                       <button onClick={() => quantity > 1 && setQuantity(quantity - 1)} className="text-muted">-</button>
                       <span className="text-xs">{quantity}</span>
                       <button onClick={() => setQuantity(quantity + 1)} className="text-muted">+</button>
                     </div>
-                    <span className="text-primary font-body text-sm">${(quantity * unitPrice).toFixed(2)}</span>
+                    <span className="text-primary text-sm">${(quantity * unitPrice).toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -99,7 +101,7 @@ export default function Home() {
       </AnimatePresence>
 
       {/* --- HERO / VIDEO SECTION --- */}
-      <section className="min-h-[300vh] relative flex flex-col items-center">
+      <section className="min-h-[350vh] relative flex flex-col items-center">
         <div className="fixed inset-0 w-full h-full z-0 pointer-events-none overflow-hidden bg-background">
           <motion.video
             ref={videoRef}
@@ -108,8 +110,9 @@ export default function Home() {
             animate={{ opacity: 0.6 }}
             transition={{ duration: 2, delay: 2.5 }}
             className="w-full h-full object-contain"
+            style={{ willChange: "transform, contents", transform: "translateZ(0)" }}
           >
-            <source src="/AguaShot.mp4" type="video/mp4" />
+            <source src="/AguaShot_smooth.mp4" type="video/mp4" />
           </motion.video>
           <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/40"></div>
         </div>
@@ -124,7 +127,7 @@ export default function Home() {
         <div className="sticky top-0 h-screen flex flex-col items-center justify-center text-center z-10 px-6">
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2.8 }} className="text-accent font-body tracking-[0.3em] text-[10px] uppercase mb-6 font-medium">The Essence of Purity</motion.p>
           <motion.h1 initial={{ opacity: 0, scale: 1.1, filter: "blur(10px)" }} animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }} transition={{ duration: 2.5 }} className="text-primary font-display text-7xl md:text-9xl italic mb-8 tracking-wider">Água.</motion.h1>
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 3.0 }} className="text-muted font-body max-w-md mx-auto leading-loose mb-12 text-xs tracking-wide">Drawn from the deepest springs. A crystalline elixir for the bold.</motion.p>
+          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 3.0 }} className="text-muted font-body max-w-md mx-auto leading-loose mb-12 text-xs tracking-wide">Drawn from the deepest springs. A crystalline elixir crafted for those who seek the perfect balance.</motion.p>
           <motion.button onClick={() => setIsCartOpen(true)} className="group relative px-10 py-4 border border-surface hover:border-accent transition-colors">
             <div className="absolute inset-0 w-0 bg-accent transition-all duration-500 group-hover:w-full"></div>
             <span className="relative text-primary font-body text-xs uppercase tracking-[0.2em] group-hover:text-white">Acquire Exclusivity</span>
@@ -132,25 +135,37 @@ export default function Home() {
         </div>
       </section>
 
-      {/* --- SECTION 2: THE COMPOSITION --- */}
-      <section className="min-h-screen flex items-center justify-center px-6 py-24 relative z-10 border-t border-surface/30 bg-background">
-        <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-          <motion.div initial={{ opacity: 0, x: -50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
-            <h2 className="text-primary font-display text-4xl italic mb-6">The Composition.</h2>
-            <div className="h-[1px] w-12 bg-accent mb-8"></div>
-            <p className="text-muted font-body leading-loose text-sm mb-6">Filtered through volcanic rock for decades.</p>
+      {/* --- SEÇÃO 2: THE COMPOSITION --- */}
+      <section className="min-h-screen flex items-center justify-center px-6 py-32 relative z-10 bg-background border-t border-surface/10">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-surface rounded-full blur-[120px] opacity-20 pointer-events-none" />
+
+        <div className="max-w-3xl mx-auto text-center relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-150px" }}
+            transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <h2 className="text-primary font-display text-5xl md:text-7xl italic mb-12 tracking-wide leading-tight">
+              The<br/>Composition.
+            </h2>
+            <div className="h-[1px] w-16 bg-accent mx-auto mb-16 opacity-60"></div>
+            <div className="space-y-8 text-muted font-body leading-loose text-sm md:text-base tracking-wide max-w-xl mx-auto text-balance">
+              <p>Far beyond hydration. Our mineral blend is extracted from deep artisan springs, filtered through volcanic rock for decades.</p>
+              <p>Featuring crystalline top notes, a slightly alkaline body, and an absurdly clean finish. Bottled at the source to preserve the signature of a true classic.</p>
+            </div>
           </motion.div>
-          <div ref={containerRef} className="h-[260px] w-full border border-surface relative overflow-hidden bg-black">
-            <motion.div style={{ y }} className="absolute inset-0 w-full h-[130%] -top-[15%] bg-[url('/agua2.png')] bg-contain bg-center bg-no-repeat opacity-80" />
-          </div>
         </div>
       </section>
 
       {/* --- FOOTER --- */}
-      <footer className="w-full border-t border-surface/30 py-16 flex flex-col items-center bg-background z-10">
-        <h2 className="text-primary font-display text-3xl italic mb-8">Água.</h2>
-        <a href="https://www.linkedin.com/in/leonardo-gaertner-93a087245/" target="_blank" className="text-muted font-body text-[10px] uppercase tracking-[0.3em] hover:text-accent mb-12">LinkedIn</a>
-        <p className="text-muted/40 font-body text-[9px] uppercase tracking-[0.4em] text-center">Engineered & Designed by<br/><span className="text-muted/80 mt-2 block uppercase">Leonardo Gaertner</span></p>
+      <footer className="w-full border-t border-surface/10 py-20 flex flex-col items-center bg-background z-10 relative">
+        <h2 className="text-primary font-display text-4xl italic mb-10 tracking-wider">Água.</h2>
+        <a href="https://www.linkedin.com/in/leonardo-gaertner-93a087245/" target="_blank" rel="noopener noreferrer" className="text-muted font-body text-[11px] uppercase tracking-[0.4em] hover:text-accent transition-colors duration-300 mb-16">LinkedIn</a>
+        <p className="text-muted/30 font-body text-[10px] uppercase tracking-[0.5em] text-center leading-relaxed">
+          Engineered & Designed by<br/>
+          <span className="text-muted/70 mt-3 block uppercase font-medium">Leonardo Gaertner</span>
+        </p>
       </footer>
     </main>
   );
