@@ -20,26 +20,28 @@ export default function Home() {
     setIsMounted(true);
   }, []);
 
-  useEffect(() => {
+useEffect(() => {
     if (!isMounted) return;
     const video = videoRef.current;
-    
-    // Log para depuração no console do navegador (F12)
-    if (video) {
-      console.log("Tentando carregar vídeo:", video.src);
-      video.load(); // Força o carregamento do recurso
-    }
+    if (!video) return;
 
+    video.pause();
+    
     let targetTime = 0;
     let actualTime = 0;
-    const friction = 0.15; 
+    // Ajuste fino: Celulares precisam de uma resposta um pouco mais "direta"
+    const friction = 0.2; 
 
     const render = () => {
-      if (video && video.duration && !isNaN(video.duration)) {
+      // Verificamos se o vídeo está pronto (readyState > 1) para evitar erros no mobile
+      if (video && video.readyState >= 2 && video.duration) {
         actualTime += (targetTime - actualTime) * friction;
-        if (Math.abs(actualTime - targetTime) < 0.0001) {
+
+        if (Math.abs(actualTime - targetTime) < 0.001) {
           actualTime = targetTime;
         }
+
+        // No mobile, alguns navegadores ignoram se o valor for exatamente igual ao anterior
         video.currentTime = actualTime;
       }
       requestAnimationFrame(render);
